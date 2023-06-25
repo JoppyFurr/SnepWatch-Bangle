@@ -103,6 +103,22 @@
         g.setFont ("Outline");
         g.drawString (time_hh + ":" + time_mm, 8, 60);
 
+        /* For now, draw the step and heart rate counter here */
+        let health = Bangle.getHealthStatus ('day');
+        let steps_string = "" + health.steps;
+        if (health.steps >= 1000)
+        {
+            steps_string = steps_string.slice (0, -3) + "," + steps_string.slice (-3);
+        }
+        g.setFont("Terminus_18");
+        g.setColor (0, 1, 0);
+        g.drawString ("{", 2, 144); /* Arrows */
+        g.setColor (1, 0, 0);
+        g.drawString ("|", 2, 160); /* Heart */
+        g.setColor (1, 1, 1);
+        g.drawString (steps_string, 2 + 15, 144);
+        g.drawString ("--", 2 + 15, 160);
+
         /* Queue up the next tick */
         snepwatch_tick_queue ();
     };
