@@ -26,13 +26,13 @@ generate_digits ()
     OUTLINE_FILENAME="bitmaps/outline.png"
     OUTLINE_BASE_FILENAME="bitmaps/outline_base.png"
 
-    convert -font ${FONT} -background black -fill white -pointsize ${POINT} -kerning 1 label:"${CHARS}" -filter point -resize 400% $CROP -flip -rotate 90 ${DIGITS_FILENAME}
+    convert -font ${FONT} -background black -fill white -pointsize ${POINT} -kerning 1 label:"${CHARS}" -filter point -resize 500% $CROP -flip -rotate 90 ${DIGITS_FILENAME}
 
     # Composition:
     # Union of with 1px offset in each up, down, left, right
     # difference with original
 
-    convert -font ${FONT} -background transparent -fill white -pointsize ${POINT} -kerning 1 label:"${CHARS}" -filter point -resize 400% $CROP -flip -rotate 90 ${OUTLINE_FILENAME}
+    convert -font ${FONT} -background transparent -fill white -pointsize ${POINT} -kerning 1 label:"${CHARS}" -filter point -resize 500% $CROP -flip -rotate 90 ${OUTLINE_FILENAME}
 
     cp ${OUTLINE_FILENAME} ${OUTLINE_BASE_FILENAME}
 
@@ -48,7 +48,7 @@ generate_digits ()
 # Unused characters are left blank to improve compression
 generate_font 14 "0123456789%" "-crop 88x10+0+2"
 generate_font 18 "\\            ,-  0123456789       A CD F   J  MNOP  ST  W         abcde ghi kl nop r tuv  y »♥" "-crop 930x15+0+3"
-generate_digits 14 "0123456789:" "-crop 352x42+0+7"
+generate_digits 14 "0123456789:" "-crop 440x52+0+9"
 
 
 
