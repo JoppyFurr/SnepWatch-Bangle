@@ -96,18 +96,18 @@
         let minutes = date.getMinutes ();
         let time_hh = ((hours < 10) ? "0" : "") + hours;
         let time_mm = ((minutes < 10) ? "0" : "") + minutes;
-
-        g.setFont ("Digits");
         g.setColor (0.5, 0, 0);
+        g.setFont ("Digits");
         g.drawString (time_hh, -2, 60);
         g.drawString (":", 71, 55);
         g.drawString (time_mm, 98, 60);
 
-        g.setFont ("Outline");
         g.setColor (1, 0, 0);
+        g.setFont ("Outline");
         g.drawString (time_hh, -2, 60);
         g.drawString (":", 71, 55);
         g.drawString (time_mm, 98, 60);
+
 
         /* For now, draw the step and heart rate counter here */
         let health = Bangle.getHealthStatus ('day');
@@ -129,14 +129,28 @@
         snepwatch_tick_queue ();
     };
 
-    g.setTheme ( { bg:"#000", fg:"#fff", dark:true } ).clear ();
+    let previous_theme = g.theme;
+    g.setTheme ( { bg:"#000", fg:"#fff", dark:true } );
 
     /* Initial call, will tick once per minute. */
     snepwatch_tick ();
 
-    Bangle.setUI ("clock");
-
     /* Use a swipe to show the widgets */
     Bangle.loadWidgets ();
     require ("widget_utils").swipeOn ();
+
+    /* Allow for Fast Loading */
+    Bangle.setUI ( { mode:"clock", remove:function ()
+    {
+        if (snepwatch_tick_timeout)
+        {
+            clearTimeout (snepwatch_tick_timeout);
+            delete Graphics.prototype.setFontTerminus_14;
+            delete Graphics.prototype.setFontTerminus_18;
+            delete Graphics.prototype.setFontDigits;
+            delete Graphics.prototype.setFontOutline;
+            g.setTheme (previous_theme);
+            require ("widget_utils").show();
+        }
+    } } );
 }
