@@ -26,6 +26,9 @@
     };
 
     var snepwatch_tick_timeout;
+    var snepwatch_hrm_timeout;
+    var heart_rate = 0;
+    var heart_rate_time = 0;
 
 
     /*
@@ -38,10 +41,30 @@
             clearTimeout (snepwatch_tick_timeout);
         }
 
-        snepwatch_tick_timeout = setTimeout (function () {
+        snepwatch_tick_timeout = setTimeout (function ()
+        {
             snepwatch_tick_timeout = undefined;
             snepwatch_tick ();
         }, 60000 - (Date.now () % 60000));
+    };
+
+
+    /*
+     * Draw the heart rate sensor reading.
+     * The reading is only shown if it is from within the last 10 seconds.
+     * Assumes the Terminus_18 font is already selected.
+     */
+    let draw_heart_rate = function ()
+    {
+        let heart_rate_string = "--";
+        if (heart_rate_time > Date.now() - 10000)
+        {
+                heart_rate_string = "" + heart_rate;
+        }
+
+        g.clearRect (17, 160, 88, 175);
+        g.setColor (1, 1, 1);
+        g.drawString (heart_rate_string, 17, 160);
     };
 
 
@@ -109,24 +132,61 @@
         g.drawString (time_mm, 98, 60);
 
 
-        /* For now, draw the step and heart rate counter here */
-        let health = Bangle.getHealthStatus ('day');
-        let steps_string = "" + health.steps;
-        if (health.steps >= 1000)
+        /* Steps so far for the day */
+        let steps = Bangle.getHealthStatus ('day').steps;
+        let steps_string = "" + steps;
+        if (steps >= 1000)
         {
             steps_string = steps_string.slice (0, -3) + "," + steps_string.slice (-3);
         }
+
         g.setFont("Terminus_18");
         g.setColor (0, 1, 0);
         g.drawString ("{", 2, 144); /* Arrows */
         g.setColor (1, 0, 0);
         g.drawString ("|", 2, 160); /* Heart */
         g.setColor (1, 1, 1);
-        g.drawString (steps_string, 2 + 15, 144);
-        g.drawString ("--", 2 + 15, 160);
+        g.drawString (steps_string, 17, 144);
+        draw_heart_rate ();
 
         /* Queue up the next tick */
         snepwatch_tick_queue ();
+    };
+
+
+    /* Callback for when the backlight state changes */
+    let display_cb = lock => {
+        if (lock)
+        {
+            /* The backlight may not run for long enough to get a good reading.
+               Wait 15 seconds with the backlight off before disabling the sensor. */
+            snepwatch_hrm_timeout = setTimeout (function ()
+            {
+                snepwatch_hrm_timeout = undefined;
+                Bangle.setHRMPower (false, "snepwatch");
+            }, 15000);
+        }
+        else
+        {
+            if (snepwatch_hrm_timeout)
+            {
+                clearTimeout (snepwatch_hrm_timeout);
+                snepwatch_hrm_timeout = undefined;
+            }
+            Bangle.setHRMPower (true, "snepwatch");
+        }
+    };
+
+    /* Callback for the heart rate monitor */
+    let heart_rate_cb = hrm => {
+        if (hrm.bpm > 0 && hrm.confidence > 50)
+        {
+            heart_rate = hrm.bpm;
+            heart_rate_time = Date.now ();
+        }
+
+        g.setFont("Terminus_18");
+        draw_heart_rate ();
     };
 
     let previous_theme = g.theme;
@@ -134,6 +194,8 @@
 
     /* Initial call, will tick once per minute. */
     snepwatch_tick ();
+    Bangle.on ('lock', display_cb);
+    Bangle.on ('HRM', heart_rate_cb);
 
     /* Use a swipe to show the widgets */
     Bangle.loadWidgets ();
@@ -144,7 +206,17 @@
     {
         if (snepwatch_tick_timeout)
         {
-            clearTimeout (snepwatch_tick_timeout);
+            if (snepwatch_tick_timeout)
+            {
+                clearTimeout (snepwatch_tick_timeout);
+            }
+            if (snepwatch_hrm_timeout)
+            {
+                clearTimeout (snepwatch_hrm_timeout);
+            }
+            Bangle.removeListener('lcdPower', display_cb);
+            Bangle.removeListener('HRM', heart_rate_cb);
+            Bangle.setHRMPower (false, "snepwatch");
             delete Graphics.prototype.setFontTerminus_14;
             delete Graphics.prototype.setFontTerminus_18;
             delete Graphics.prototype.setFontDigits;
