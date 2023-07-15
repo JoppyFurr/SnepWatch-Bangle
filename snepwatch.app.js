@@ -27,6 +27,7 @@
 
     var snepwatch_tick_timeout;
     var snepwatch_hrm_timeout;
+    var snepwatch_hrm_show_timeout;
     var heart_rate = 0;
     var heart_rate_time = 0;
 
@@ -71,14 +72,36 @@
     let draw_heart_rate = function ()
     {
         let heart_rate_string = "--";
-        if (heart_rate_time > Date.now() - 10000)
+        let hrm_show = false;
+
+        /* As we are about to show the heart rate,
+         * previously set timers are considered invalid  */
+        if (snepwatch_hrm_show_timeout)
         {
-                heart_rate_string = "" + heart_rate;
+            clearTimeout (snepwatch_hrm_show_timeout);
+        }
+
+        /* Only show the heart rate if the measurement is recent */
+        if (heart_rate_time > Date.now () - 10000)
+        {
+            hrm_show = true;
+            heart_rate_string = "" + heart_rate;
         }
 
         g.clearRect (17, 160, 88, 175);
         g.setColor (0 + settings.text, 0 + settings.text, 0 + settings.text);
         g.drawString (heart_rate_string, 17, 160);
+
+        /* If the heart rate was shown, check back when the reading
+         * would become stale so that it can be cleared. */
+        if (hrm_show)
+        {
+            snepwatch_hrm_show_timeout = setTimeout (function ()
+            {
+                snepwatch_hrm_show_timeout = undefined;
+                draw_heart_rate ();
+            }, heart_rate_time + 10000 - Date.now ());
+        }
     };
 
 
@@ -229,6 +252,10 @@
             if (snepwatch_hrm_timeout)
             {
                 clearTimeout (snepwatch_hrm_timeout);
+            }
+            if (snepwatch_hrm_show_timeout)
+            {
+                clearTimeout (snepwatch_hrm_show_timeout);
             }
             Bangle.removeListener('lcdPower', display_cb);
             Bangle.removeListener('HRM', heart_rate_cb);
