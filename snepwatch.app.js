@@ -30,6 +30,20 @@
     var heart_rate = 0;
     var heart_rate_time = 0;
 
+    /* Load settings */
+    var settings = Object.assign ({
+        /* Default Values */
+        outline_r: 1,
+        outline_g: 0,
+        outline_b: 0,
+        fill_r: 0.5,
+        fill_g: 0,
+        fill_b: 0,
+        bg_r: 0,
+        bg_g: 0,
+        bg_b: 0,
+        text: 1,
+    }, require ('Storage').readJSON ("snepwatch.json", true) || {});
 
     /*
      * Tick once per minute.
@@ -63,7 +77,7 @@
         }
 
         g.clearRect (17, 160, 88, 175);
-        g.setColor (1, 1, 1);
+        g.setColor (0 + settings.text, 0 + settings.text, 0 + settings.text);
         g.drawString (heart_rate_string, 17, 160);
     };
 
@@ -83,7 +97,7 @@
 
         /* Clear */
         g.reset ();
-        g.setBgColor (0, 0, 0);
+        g.setBgColor (settings.bg_r, settings.bg_g, settings.bg_b);
         g.clear ();
 
         /* Battery level - Note, '%' is encoded as ':' */
@@ -94,7 +108,7 @@
         }
         else
         {
-            g.setColor (0, 1, 1);
+            g.setColor (0, 0 + settings.text, 1);
         }
         g.setFont ("Terminus_14");
         g.drawString (battery_text, 2, 2);
@@ -110,7 +124,7 @@
         {
             date_text = " " + date_text;
         }
-        g.setColor (1, 1, 1);
+        g.setColor (0 + settings.text, 0 + settings.text, 0 + settings.text);
         g.setFont ("Terminus_18");
         g.drawString (date_text, 65, 2);
 
@@ -119,13 +133,13 @@
         let minutes = date.getMinutes ();
         let time_hh = ((hours < 10) ? "0" : "") + hours;
         let time_mm = ((minutes < 10) ? "0" : "") + minutes;
-        g.setColor (0.5, 0, 0);
+        g.setColor (settings.fill_r, settings.fill_g, settings.fill_b);
         g.setFont ("Digits");
         g.drawString (time_hh, -2, 60);
         g.drawString (":", 71, 55);
         g.drawString (time_mm, 98, 60);
 
-        g.setColor (1, 0, 0);
+        g.setColor (settings.outline_r, settings.outline_g, settings.outline_b);
         g.setFont ("Outline");
         g.drawString (time_hh, -2, 60);
         g.drawString (":", 71, 55);
@@ -141,11 +155,13 @@
         }
 
         g.setFont("Terminus_18");
-        g.setColor (0, 1, 0);
+        /* With dark text, use blue for the step symbol.
+           With light text, use green for the step symbol. */
+        g.setColor (0, 0 + settings.text, 1 - settings.text);
         g.drawString ("{", 2, 144); /* Arrows */
         g.setColor (1, 0, 0);
         g.drawString ("|", 2, 160); /* Heart */
-        g.setColor (1, 1, 1);
+        g.setColor (0 + settings.text, 0 + settings.text, 0 + settings.text);
         g.drawString (steps_string, 17, 144);
         draw_heart_rate ();
 
@@ -192,7 +208,7 @@
     let previous_theme = g.theme;
     g.setTheme ( { bg:"#000", fg:"#fff", dark:true } );
 
-    /* Initial call, will tick once per minute. */
+    /* Initial call, will tick once per minute */
     snepwatch_tick ();
     Bangle.on ('lock', display_cb);
     Bangle.on ('HRM', heart_rate_cb);
